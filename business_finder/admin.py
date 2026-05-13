@@ -1,4 +1,5 @@
 from sqladmin import ModelView
+from sqladmin.filters import AllUniqueStringValuesFilter, ForeignKeyFilter
 
 from business_finder.models import Lead, Scan
 
@@ -38,7 +39,13 @@ class LeadAdmin(ModelView, model=Lead):
         Lead.outreach_status,
     ]
     column_searchable_list = [Lead.name, Lead.address, Lead.phone, Lead.email]
-    column_filters = [Lead.website_status, Lead.priority, Lead.outreach_status, Lead.business_status, Lead.scan_id]
+    column_filters = [
+        AllUniqueStringValuesFilter(Lead.website_status),
+        AllUniqueStringValuesFilter(Lead.priority),
+        AllUniqueStringValuesFilter(Lead.outreach_status),
+        AllUniqueStringValuesFilter(Lead.business_status),
+        ForeignKeyFilter(Lead.scan_id, Scan.query),
+    ]
     column_sortable_list = [Lead.priority, Lead.score, Lead.rating, Lead.review_count, Lead.created_at]
     column_default_sort = [(Lead.priority, True), (Lead.score, True)]
     form_edit_rules = ["email", "email_source", "notes", "outreach_status"]
