@@ -23,6 +23,7 @@ dev = [
 ]
 
 [project.scripts]
+bf = "business_finder.cli:app"
 business-finder = "business_finder.cli:app"
 
 [build-system]
