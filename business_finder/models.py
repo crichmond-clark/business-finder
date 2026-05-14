@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from enum import Enum
 
 from sqlalchemy import DateTime, Float, ForeignKey, Integer, JSON, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -6,9 +7,28 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from business_finder.database import Base
 
 
-WEBSITE_STATUSES = {"no_site", "social_only", "third_party_platform", "broken", "live", "unknown"}
-PRIORITIES = {"high", "medium", "low", "skip"}
-OUTREACH_STATUSES = {"not_contacted", "contacted", "replied", "not_interested", "converted"}
+class WebsiteStatus(str, Enum):
+    NO_SITE = "no_site"
+    SOCIAL_ONLY = "social_only"
+    THIRD_PARTY_PLATFORM = "third_party_platform"
+    BROKEN = "broken"
+    LIVE = "live"
+    UNKNOWN = "unknown"
+
+
+class Priority(str, Enum):
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+    SKIP = "skip"
+
+
+class OutreachStatus(str, Enum):
+    NOT_CONTACTED = "not_contacted"
+    CONTACTED = "contacted"
+    REPLIED = "replied"
+    NOT_INTERESTED = "not_interested"
+    CONVERTED = "converted"
 
 
 def utcnow() -> datetime:

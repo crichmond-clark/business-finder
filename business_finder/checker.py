@@ -5,6 +5,8 @@ from urllib.parse import urlparse
 
 import httpx
 
+from business_finder.models import WebsiteStatus
+
 SOCIAL_DOMAINS = {"facebook.com", "instagram.com", "tiktok.com", "linktr.ee", "linkedin.com", "x.com", "twitter.com"}
 THIRD_PARTY_DOMAINS = {
     "yelp.com",
@@ -42,15 +44,15 @@ def domain_matches(domain: str, candidates: set[str]) -> bool:
 def classify_url(url: str) -> str:
     domain = normalise_domain(url)
     if domain_matches(domain, SOCIAL_DOMAINS):
-        return "social_only"
+        return WebsiteStatus.SOCIAL_ONLY
     if domain_matches(domain, THIRD_PARTY_DOMAINS):
-        return "third_party_platform"
-    return "live"
+        return WebsiteStatus.THIRD_PARTY_PLATFORM
+    return WebsiteStatus.LIVE
 
 
 async def check_website(url: str | None, client: httpx.AsyncClient | None = None) -> WebsiteCheckResult:
     if not url:
-        return WebsiteCheckResult(status="no_site")
+        return WebsiteCheckResult(status=WebsiteStatus.NO_SITE)
     request_url = url if url.startswith(("http://", "https://")) else f"https://{url}"
     try:
         if client is not None:
@@ -60,13 +62,13 @@ async def check_website(url: str | None, client: httpx.AsyncClient | None = None
             async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as owned_client:
                 response = await owned_client.get(request_url)
     except httpx.TooManyRedirects as exc:
-        return WebsiteCheckResult(status="broken", final_url=request_url, error=str(exc))
+        return WebsiteCheckResult(status=WebsiteStatus.BROKEN, final_url=request_url, error=str(exc))
     except httpx.HTTPError as exc:
-        return WebsiteCheckResult(status="broken", final_url=request_url, error=exc.__class__.__name__)
+        return WebsiteCheckResult(status=WebsiteStatus.BROKEN, final_url=request_url, error=exc.__class__.__name__)
 
     chain = [str(item.url) for item in response.history] + [str(response.url)]
     if response.status_code >= 400:
-        status = "broken"
+        status = WebsiteStatus.BROKEN
     else:
         status = classify_url(str(response.url))
     return WebsiteCheckResult(status=status, final_url=str(response.url), http_status_code=response.status_code, redirect_chain=chain)

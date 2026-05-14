@@ -29,6 +29,7 @@ class LeadAdmin(ModelView, model=Lead):
     can_export = True
     column_list = [
         Lead.name,
+        Lead.website_url,
         Lead.website_status,
         Lead.priority,
         Lead.score,

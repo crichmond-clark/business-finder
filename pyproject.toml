@@ -1,5 +1,5 @@
 [project]
-name = "ai-business-finder"
+name = "business-finder"
 version = "0.1.0"
 description = "Internal business lead finder using Google Places, website checks, and SQLAdmin."
 requires-python = ">=3.12"
@@ -14,6 +14,7 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "httpx>=0.27.0",
     "aiosqlite>=0.20.0",
+    "sqlalchemy-libsql>=0.2.0",
 ]
 
 [dependency-groups]
@@ -36,3 +37,10 @@ packages = ["business_finder"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]

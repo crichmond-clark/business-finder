@@ -32,9 +32,8 @@ class PlacesApiError(RuntimeError):
 
 
 class PlacesClient:
-    def __init__(self, api_key: str, client: httpx.AsyncClient | None = None) -> None:
+    def __init__(self, api_key: str) -> None:
         self.api_key = api_key
-        self.client = client
 
     async def search_text(
         self,
@@ -53,11 +52,8 @@ class PlacesClient:
             payload["pageToken"] = page_token
 
         headers = {"X-Goog-Api-Key": self.api_key, "X-Goog-FieldMask": FIELD_MASK}
-        if self.client is not None:
-            response = await self.client.post(PLACES_TEXT_SEARCH_URL, json=payload, headers=headers)
-        else:
-            async with httpx.AsyncClient(timeout=20) as client:
-                response = await client.post(PLACES_TEXT_SEARCH_URL, json=payload, headers=headers)
+        async with httpx.AsyncClient(timeout=20) as client:
+            response = await client.post(PLACES_TEXT_SEARCH_URL, json=payload, headers=headers)
 
         if response.status_code >= 400:
             raise PlacesApiError(f"Places API request failed ({response.status_code}): {response.text}")

@@ -14,16 +14,36 @@ Internal lead-generation tool for finding small businesses with missing, broken,
 ```bash
 uv sync
 cp .env.example .env
-uv run bf init
 ```
 
 Edit `.env` and set:
 
 ```env
-GOOGLE_MAPS_API_KEY=your-key-here
+GOOGLE_MAPS_API_KEY=your-google-places-key
 ```
 
-The default database is local SQLite at `./business_finder.db`. Turso/libSQL variables are present for later deployment, but local development works without them.
+By default the app uses local SQLite at `./business_finder.db`.
+
+To use Turso from the start instead, create/get your Turso database credentials:
+
+```bash
+turso db create ai-business-finder
+turso db show --url ai-business-finder
+turso db tokens create ai-business-finder
+```
+
+Then set these in `.env`:
+
+```env
+TURSO_DATABASE_URL=libsql://your-database.turso.io
+TURSO_AUTH_TOKEN=your-turso-token
+```
+
+Finally create/update the tables:
+
+```bash
+uv run bf init
+```
 
 ## Run the dashboard
 

@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from business_finder.models import Priority, WebsiteStatus
+
 
 @dataclass(frozen=True)
 class LeadScore:
@@ -8,25 +10,25 @@ class LeadScore:
 
 
 WEBSITE_POINTS = {
-    "no_site": 45,
-    "broken": 40,
-    "social_only": 35,
-    "third_party_platform": 32,
-    "unknown": 15,
-    "live": 0,
+    WebsiteStatus.NO_SITE: 45,
+    WebsiteStatus.BROKEN: 40,
+    WebsiteStatus.SOCIAL_ONLY: 35,
+    WebsiteStatus.THIRD_PARTY_PLATFORM: 32,
+    WebsiteStatus.UNKNOWN: 15,
+    WebsiteStatus.LIVE: 0,
 }
 
 
 def priority_for_score(score: int, business_status: str | None = None) -> str:
     if business_status == "CLOSED_PERMANENTLY":
-        return "skip"
+        return Priority.SKIP
     if score >= 70:
-        return "high"
+        return Priority.HIGH
     if score >= 40:
-        return "medium"
+        return Priority.MEDIUM
     if score >= 1:
-        return "low"
-    return "skip"
+        return Priority.LOW
+    return Priority.SKIP
 
 
 def score_lead_data(
@@ -39,9 +41,9 @@ def score_lead_data(
     address: str | None,
 ) -> LeadScore:
     if business_status == "CLOSED_PERMANENTLY":
-        return LeadScore(score=0, priority="skip")
+        return LeadScore(score=0, priority=Priority.SKIP)
 
-    score = WEBSITE_POINTS.get(website_status, WEBSITE_POINTS["unknown"])
+    score = WEBSITE_POINTS.get(website_status, WEBSITE_POINTS[WebsiteStatus.UNKNOWN])
     if review_count:
         if review_count >= 50:
             score += 20

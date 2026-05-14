@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from business_finder.checker import check_many
 from business_finder.config import get_settings
-from business_finder.models import Lead, Scan
+from business_finder.models import Lead, Priority, Scan, WebsiteStatus
 from business_finder.scorer import score_lead
 from business_finder.services.places import PlacesClient
 
@@ -39,9 +39,9 @@ def place_to_lead(scan_id: int, place: dict) -> Lead:
         primary_type=place.get("primaryType"),
         types=place.get("types") or [],
         raw_data=place,
-        website_status="unknown",
+        website_status=WebsiteStatus.UNKNOWN,
         score=0,
-        priority="low",
+        priority=Priority.LOW,
     )
 
 
