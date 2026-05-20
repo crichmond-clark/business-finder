@@ -1,3 +1,4 @@
+import asyncio
 from dataclasses import dataclass
 
 from sqlalchemy import select
@@ -5,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from business_finder.checker import check_many
 from business_finder.config import get_settings
+from business_finder.email_enrichment import enrich_lead_email
 from business_finder.models import Lead, Priority, Scan, WebsiteStatus
 from business_finder.scorer import score_lead
 from business_finder.services.places import PlacesClient
@@ -131,3 +133,82 @@ async def check_websites_for_scan(session: Session, scan_id: int) -> int:
         scan.high_priority_count = sum(1 for lead in leads if lead.priority == "high")
     session.commit()
     return len(leads)
+
+
+# ---------------------------------------------------------------------------
+# Email enrichment service
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class EmailEnrichmentSummary:
+    checked: int
+    found: int
+    skipped_existing: int
+    skipped_website_status: int
+    failed: int
+
+
+async def enrich_leads_emails(
+    session: Session,
+    *,
+    scan_id: int | None = None,
+    priority: str | None = None,
+    website_status: str | None = "live",
+    limit: int | None = None,
+    overwrite: bool = False,
+    include_non_live: bool = False,
+    max_pages: int = 4,
+    concurrency: int = 5,
+) -> EmailEnrichmentSummary:
+    """Find public website emails for selected leads and update Lead.email."""
+    statement = select(Lead)
+    if scan_id is not None:
+        statement = statement.where(Lead.scan_id == scan_id)
+    if priority:
+        statement = statement.where(Lead.priority == priority)
+    if limit is not None:
+        statement = statement.limit(limit)
+
+    leads = list(session.scalars(statement.order_by(Lead.score.desc(), Lead.name)))
+
+    semaphore = asyncio.Semaphore(concurrency)
+    skipped_existing = 0
+    skipped_website_status = 0
+    found = 0
+    failed = 0
+
+    async def _process(lead: Lead) -> None:
+        nonlocal skipped_existing, skipped_website_status, found, failed
+        url = lead.website_final_url or lead.website_url
+        if not url or (not include_non_live and lead.website_status != "live"):
+            skipped_website_status += 1
+            return
+        if lead.email and not overwrite:
+            skipped_existing += 1
+            return
+        async with semaphore:
+            try:
+                result = await enrich_lead_email(url, max_pages=max_pages)
+            except Exception:
+                failed += 1
+                return
+        if result.error:
+            failed += 1
+        elif result.email:
+            lead.email = result.email
+            lead.email_source = result.email_source
+            found += 1
+
+    tasks = [_process(lead) for lead in leads]
+    await asyncio.gather(*tasks)
+    if found:
+        session.commit()
+
+    return EmailEnrichmentSummary(
+        checked=len(leads),
+        found=found,
+        skipped_existing=skipped_existing,
+        skipped_website_status=skipped_website_status,
+        failed=failed,
+    )

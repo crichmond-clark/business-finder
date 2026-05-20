@@ -79,12 +79,42 @@ Recheck websites for an existing scan without making another Google Places API c
 uv run bf check 1
 ```
 
+## Enrich emails from websites
+
+Google Places does not return business email addresses. After scanning, run:
+
+```bash
+#Find emails on live websites for high-priority leads
+uv run bf enrich-emails --priority high
+
+# Limit to 5 leads for testing
+uv run bf enrich-emails --priority high --limit 5
+
+# Overwrite existing emails (default: skip)
+uv run bf enrich-emails --priority high --overwrite
+
+# Include non-live websites
+uv run bf enrich-emails --scan 1 --include-non-live
+```
+
+The enrichment crawls up to 4 pages per website (homepage + contact/about pages) and
+saves the best business email found with a provenance label (`email_source`).
+
 ## Export leads
 
-Export directly from the CLI:
+Export directly from the CLI in AI Agency Pipeline-compatible format:
 
 ```bash
 uv run bf export leads.csv --priority high
+```
+
+Then upload `leads.csv` in AI Agency Pipeline at:
+
+<http://localhost:3000/dashboard/leads>
+
+You can also export a single scan:
+
+```bash
 uv run bf export leads-scan-1.csv --scan 1
 ```
 
